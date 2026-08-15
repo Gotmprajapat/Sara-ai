@@ -1,6 +1,10 @@
 // js/conversation.js
 
 import {
+  applyMoodToResponse
+} from "./personality.js";
+
+import {
   findKnowledge,
   remember
 } from "./training.js";
@@ -346,12 +350,14 @@ export async function talkToSara(userText) {
 
 
   // Unknown
-  return {
+  return applyMoodToResponse(
+  {
     text:
       "Mujhe iska abhi pata nahi hai.",
     mood:
       "normal",
     known:
       false
-  };
-  }
+  },
+  userText
+);
