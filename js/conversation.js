@@ -6,143 +6,84 @@ import {
 } from "./training.js";
 
 
-// ==========================================
-// TEXT HELPERS
-// ==========================================
+// ===============================
+// CLEAN TEXT
+// ===============================
 
 function clean(text) {
-
   return (text || "")
     .toLowerCase()
     .trim()
     .replace(/[?!.,।]/g, "");
-
 }
 
 
-// ==========================================
-// TRAINING / MEMORY DETECTION
-// ==========================================
+// ===============================
+// TRAINING / MEMORY
+// ===============================
 
 function extractFact(text) {
 
-  const original =
-    text.trim();
+  const original = text.trim();
 
-  const lower =
-    clean(original);
-
-
-  // ----------------------------------------
-  // "mera naam Gautam hai"
-  // ----------------------------------------
-
-  let match =
-    original.match(
-      /mera naam\s+(.+?)\s+(?:hai|है)$/i
-    );
+  let match = original.match(
+    /mera naam\s+(.+?)\s+(?:hai|है)/i
+  );
 
   if (match) {
-
     return {
-      key: "user_name",
-      value: match[1].trim(),
-      text:
-        `User ka naam ${match[1].trim()} hai.`
+      text: `User ka naam ${match[1].trim()} hai.`
     };
-
   }
 
 
-  // ----------------------------------------
-  // "meri mummy ka naam Sunita hai"
-  // ----------------------------------------
-
-  match =
-    original.match(
-      /meri mummy ka naam\s+(.+?)\s+(?:hai|है)/i
-    );
+  match = original.match(
+    /meri mummy ka naam\s+(.+?)\s+(?:hai|है)/i
+  );
 
   if (match) {
-
     return {
-      key: "mother_name",
-      value: match[1].trim(),
-      text:
-        `User ki mummy ka naam ${match[1].trim()} hai.`
+      text: `User ki mummy ka naam ${match[1].trim()} hai.`
     };
-
   }
 
 
-  // ----------------------------------------
-  // "mere papa ka naam ..."
-  // ----------------------------------------
-
-  match =
-    original.match(
-      /mere papa ka naam\s+(.+?)\s+(?:hai|है)/i
-    );
+  match = original.match(
+    /mere papa ka naam\s+(.+?)\s+(?:hai|है)/i
+  );
 
   if (match) {
-
     return {
-      key: "father_name",
-      value: match[1].trim(),
-      text:
-        `User ke papa ka naam ${match[1].trim()} hai.`
+      text: `User ke papa ka naam ${match[1].trim()} hai.`
     };
-
   }
 
 
-  // ----------------------------------------
-  // "mujhe ... pasand hai"
-  // ----------------------------------------
-
-  match =
-    original.match(
-      /mujhe\s+(.+?)\s+pasand hai/i
-    );
+  match = original.match(
+    /mujhe\s+(.+?)\s+pasand hai/i
+  );
 
   if (match) {
-
     return {
-      key: "user_preference",
-      value: match[1].trim(),
-      text:
-        `User ko ${match[1].trim()} pasand hai.`
+      text: `User ko ${match[1].trim()} pasand hai.`
     };
-
   }
 
 
-  // ----------------------------------------
-  // "mujhe ... pasand nahi hai"
-  // ----------------------------------------
-
-  match =
-    original.match(
-      /mujhe\s+(.+?)\s+pasand nahi hai/i
-    );
+  match = original.match(
+    /mujhe\s+(.+?)\s+pasand nahi hai/i
+  );
 
   if (match) {
-
     return {
-      key: "user_dislike",
-      value: match[1].trim(),
-      text:
-        `User ko ${match[1].trim()} pasand nahi hai.`
+      text: `User ko ${match[1].trim()} pasand nahi hai.`
     };
-
   }
 
 
-  // ----------------------------------------
-  // "yaad rakhna: ..."
-  // ----------------------------------------
+  const lower = clean(original);
 
-  const rememberPatterns = [
+  const rememberWords = [
     "yaad rakhna",
     "yaad rakh",
     "dhyan rakhna",
@@ -150,78 +91,49 @@ function extractFact(text) {
     "remember"
   ];
 
+  for (const word of rememberWords) {
 
-  for (
-    const pattern of rememberPatterns
-  ) {
-
-    if (lower.startsWith(pattern)) {
+    if (lower.startsWith(word)) {
 
       const value =
-        original
-          .slice(pattern.length)
-          .trim();
+        original.slice(word.length).trim();
 
       if (value) {
-
         return {
-          key: "general_memory",
-          value,
           text: value
         };
-
       }
-
     }
-
   }
 
-
   return null;
-
 }
 
 
-// ==========================================
-// SAVE FACT
-// ==========================================
+// ===============================
+// SAVE MEMORY
+// ===============================
 
 async function saveFact(fact) {
 
-  await remember(
-    fact.text
-  );
+  await remember(fact.text);
 
   return {
-
-    text:
-      "Haan, yaad rakh liya. ❤️",
-
-    mood:
-      "happy",
-
-    known:
-      true
-
+    text: "Haan, yaad rakh liya. ❤️",
+    mood: "happy",
+    known: true
   };
-
 }
 
 
-// ==========================================
+// ===============================
 // MEMORY SEARCH
-// ==========================================
+// ===============================
 
-async function searchMemory(
-  text
-) {
+async function searchMemory(text) {
 
-  const lower =
-    clean(text);
+  const lower = clean(text);
 
-
-  // Specific questions first
-  // ----------------------------------------
 
   if (
     lower.includes("mera naam") ||
@@ -234,17 +146,10 @@ async function searchMemory(
     if (result.length) {
 
       return result[0].text
-        .replace(
-          "User ka naam ",
-          ""
-        )
-        .replace(
-          " hai",
-          ""
-        ) + ".";
-
+        .replace("User ka naam ", "")
+        .replace(" hai.", "")
+        .replace(" hai", "") + ".";
     }
-
   }
 
 
@@ -264,13 +169,9 @@ async function searchMemory(
           "User ki mummy ka naam ",
           ""
         )
-        .replace(
-          " hai.",
-          ""
-        ) + ".";
-
+        .replace(" hai.", "")
+        .replace(" hai", "") + ".";
     }
-
   }
 
 
@@ -289,71 +190,50 @@ async function searchMemory(
           "User ke papa ka naam ",
           ""
         )
-        .replace(
-          " hai.",
-          ""
-        ) + ".";
-
+        .replace(" hai.", "")
+        .replace(" hai", "") + ".";
     }
-
   }
 
-
-  // ----------------------------------------
-  // General keyword search
-  // ----------------------------------------
 
   const words =
     lower
       .split(/\s+/)
-      .filter(
-        word => word.length >= 3
-      );
+      .filter(word => word.length >= 3);
 
 
-  for (
-    const word of words
-  ) {
+  for (const word of words) {
 
     const result =
       await findKnowledge(word);
 
     if (result.length) {
-
       return result[0].text;
-
     }
-
   }
 
 
   return null;
-
 }
 
 
-// ==========================================
-// BASIC CONVERSATION
-// ==========================================
+// ===============================
+// BASIC TALK
+// ===============================
 
 function basicReply(text) {
 
-  const lower =
-    clean(text);
+  const lower = clean(text);
 
 
   if (
-    /^(hi|hii|hello|hey)$/.test(
-      lower
-    )
+    /^(hi|hii|hello|hey)$/.test(lower)
   ) {
-
     return {
       text: "Haan 😊 bolo.",
       mood: "happy",
       known: true
     };
-
   }
 
 
@@ -361,32 +241,22 @@ function basicReply(text) {
     lower.includes("kaisi ho") ||
     lower.includes("kaise ho")
   ) {
-
     return {
-      text:
-        "Main theek hoon. Tum batao?",
-      mood:
-        "happy",
-      known:
-        true
+      text: "Main theek hoon. Tum batao?",
+      mood: "happy",
+      known: true
     };
-
   }
 
 
   if (
     lower.includes("good morning")
   ) {
-
     return {
-      text:
-        "Good morning 😊",
-      mood:
-        "happy",
-      known:
-        true
+      text: "Good morning 😊",
+      mood: "happy",
+      known: true
     };
-
   }
 
 
@@ -394,16 +264,11 @@ function basicReply(text) {
     lower.includes("thank you") ||
     lower.includes("thanks")
   ) {
-
     return {
-      text:
-        "Hmm 😊",
-      mood:
-        "happy",
-      known:
-        true
+      text: "Hmm 😊",
+      mood: "happy",
+      known: true
     };
-
   }
 
 
@@ -411,105 +276,64 @@ function basicReply(text) {
     lower === "sorry" ||
     lower.includes("sorry sara")
   ) {
-
     return {
-      text:
-        "Theek hai.",
-      mood:
-        "normal",
-      known:
-        true
+      text: "Theek hai.",
+      mood: "normal",
+      known: true
     };
-
   }
 
 
   return null;
-
 }
 
 
-// ==========================================
-// MAIN ENGINE
-// ==========================================
+// ===============================
+// MAIN CONVERSATION
+// ===============================
 
-export async function talkToSara(
-  userText
-) {
+export async function talkToSara(userText) {
 
-  if (
-    !userText ||
-    !userText.trim()
-  ) {
-
+  if (!userText || !userText.trim()) {
     return {
       text: "",
       mood: "normal",
       known: false
     };
-
   }
 
 
-  const text =
-    userText.trim();
+  const text = userText.trim();
 
 
-  // ----------------------------------------
-  // 1. Check if user is teaching
-  // ----------------------------------------
-
-  const fact =
-    extractFact(text);
-
+  // User Sara ko train kar raha hai
+  const fact = extractFact(text);
 
   if (fact) {
-
-    return saveFact(
-      fact
-    );
-
+    return saveFact(fact);
   }
 
 
-  // ----------------------------------------
-  // 2. Basic conversation
-  // ----------------------------------------
-
-  const basic =
-    basicReply(text);
-
+  // Normal small talk
+  const basic = basicReply(text);
 
   if (basic) {
     return basic;
   }
 
 
-  // ----------------------------------------
-  // 3. Search memory
-  // ----------------------------------------
-
+  // Long-term memory
   try {
 
-    const memoryAnswer =
+    const answer =
       await searchMemory(text);
 
-
-    if (memoryAnswer) {
-
+    if (answer) {
       return {
-
-        text:
-          memoryAnswer,
-
-        mood:
-          "normal",
-
-        known:
-          true
-
+        text: answer,
+        mood: "normal",
+        known: true
       };
-
     }
 
   } catch (error) {
@@ -518,25 +342,16 @@ export async function talkToSara(
       "Memory search error:",
       error
     );
-
   }
 
 
-  // ----------------------------------------
-  // 4. Unknown
-  // ----------------------------------------
-
+  // Unknown
   return {
-
     text:
       "Mujhe iska abhi pata nahi hai.",
-
     mood:
       "normal",
-
     known:
       false
-
   };
-
-}
+  }
