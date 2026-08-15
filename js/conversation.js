@@ -1,8 +1,8 @@
-// js/conversation.js
+   // js/conversation.js
 
 import {
-  applyMoodToResponse
-} from "./personality.js";
+  processResponse
+} from "./response.js";
 
 import {
   findKnowledge,
@@ -64,23 +64,25 @@ function extractFact(text) {
 
 
   match = original.match(
-    /mujhe\s+(.+?)\s+pasand hai/i
-  );
-
-  if (match) {
-    return {
-      text: `User ko ${match[1].trim()} pasand hai.`
-    };
-  }
-
-
-  match = original.match(
     /mujhe\s+(.+?)\s+pasand nahi hai/i
   );
 
   if (match) {
     return {
-      text: `User ko ${match[1].trim()} pasand nahi hai.`
+      text:
+        `User ko ${match[1].trim()} pasand nahi hai.`
+    };
+  }
+
+
+  match = original.match(
+    /mujhe\s+(.+?)\s+pasand hai/i
+  );
+
+  if (match) {
+    return {
+      text:
+        `User ko ${match[1].trim()} pasand hai.`
     };
   }
 
@@ -203,7 +205,9 @@ async function searchMemory(text) {
   const words =
     lower
       .split(/\s+/)
-      .filter(word => word.length >= 3);
+      .filter(
+        word => word.length >= 3
+      );
 
 
   for (const word of words) {
@@ -233,6 +237,7 @@ function basicReply(text) {
   if (
     /^(hi|hii|hello|hey)$/.test(lower)
   ) {
+
     return {
       text: "Haan 😊 bolo.",
       mood: "happy",
@@ -245,10 +250,14 @@ function basicReply(text) {
     lower.includes("kaisi ho") ||
     lower.includes("kaise ho")
   ) {
+
     return {
-      text: "Main theek hoon. Tum batao?",
-      mood: "happy",
-      known: true
+      text:
+        "Main theek hoon. Tum batao?",
+      mood:
+        "happy",
+      known:
+        true
     };
   }
 
@@ -256,10 +265,14 @@ function basicReply(text) {
   if (
     lower.includes("good morning")
   ) {
+
     return {
-      text: "Good morning 😊",
-      mood: "happy",
-      known: true
+      text:
+        "Good morning 😊",
+      mood:
+        "happy",
+      known:
+        true
     };
   }
 
@@ -268,10 +281,14 @@ function basicReply(text) {
     lower.includes("thank you") ||
     lower.includes("thanks")
   ) {
+
     return {
-      text: "Hmm 😊",
-      mood: "happy",
-      known: true
+      text:
+        "Hmm 😊",
+      mood:
+        "happy",
+      known:
+        true
     };
   }
 
@@ -280,10 +297,14 @@ function basicReply(text) {
     lower === "sorry" ||
     lower.includes("sorry sara")
   ) {
+
     return {
-      text: "Theek hai.",
-      mood: "normal",
-      known: true
+      text:
+        "Theek hai.",
+      mood:
+        "normal",
+      known:
+        true
     };
   }
 
@@ -296,48 +317,88 @@ function basicReply(text) {
 // MAIN CONVERSATION
 // ===============================
 
-export async function talkToSara(userText) {
+export async function talkToSara(
+  userText
+) {
 
-  if (!userText || !userText.trim()) {
-    return {
-      text: "",
-      mood: "normal",
-      known: false
-    };
+  if (
+    !userText ||
+    !userText.trim()
+  ) {
+
+    return processResponse(
+      {
+        text: "",
+        mood: "normal",
+        known: false
+      },
+      userText
+    );
+
   }
 
 
-  const text = userText.trim();
+  const text =
+    userText.trim();
 
 
-  // User Sara ko train kar raha hai
-  const fact = extractFact(text);
+  // ===============================
+  // USER TRAINING
+  // ===============================
+
+  const fact =
+    extractFact(text);
 
   if (fact) {
-    return saveFact(fact);
+
+    const response =
+      await saveFact(fact);
+
+    return processResponse(
+      response,
+      userText
+    );
+
   }
 
 
-  // Normal small talk
-  const basic = basicReply(text);
+  // ===============================
+  // BASIC TALK
+  // ===============================
+
+  const basic =
+    basicReply(text);
 
   if (basic) {
-    return basic;
+
+    return processResponse(
+      basic,
+      userText
+    );
+
   }
 
 
-  // Long-term memory
+  // ===============================
+  // LONG-TERM MEMORY
+  // ===============================
+
   try {
 
     const answer =
       await searchMemory(text);
 
     if (answer) {
-      return {
-        text: answer,
-        mood: "normal",
-        known: true
-      };
+
+      return processResponse(
+        {
+          text: answer,
+          mood: "normal",
+          known: true
+        },
+        userText
+      );
+
     }
 
   } catch (error) {
@@ -346,18 +407,23 @@ export async function talkToSara(userText) {
       "Memory search error:",
       error
     );
+
   }
 
 
-  // Unknown
-  return applyMoodToResponse(
-  {
-    text:
-      "Mujhe iska abhi pata nahi hai.",
-    mood:
-      "normal",
-    known:
-      false
-  },
-  userText
-);
+  // ===============================
+  // UNKNOWN
+  // ===============================
+
+  return processResponse(
+    {
+      text:
+        "Mujhe iska abhi pata nahi hai.",
+      mood:
+        "normal",
+      known:
+        false
+    },
+    userText
+  );
+      }
