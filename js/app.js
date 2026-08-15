@@ -13,8 +13,8 @@ import {
 } from "./voice.js";
 
 import {
-  talkToSara
-} from "./conversation.js";
+  processAssistant
+} from "./assistant.js";
 
 
 // ==========================================
@@ -227,9 +227,9 @@ async function listenToUser() {
 
 
     const response =
-      await talkToSara(
-        userText
-      );
+  await processAssistant(
+    userText
+  );
 
 
     await SaraSpeak(
