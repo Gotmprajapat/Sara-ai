@@ -6,6 +6,16 @@ import {
   startAuthUI
 } from "./auth-ui.js";
 
+import {
+  speak,
+  listen,
+  stopSpeaking
+} from "./voice.js";
+
+import {
+  askSara
+} from "./ai.js";
+
 
 // ==========================================
 // SARA STATE
@@ -17,6 +27,8 @@ const Sara = {
   active: false,
 
   mood: "normal",
+
+  listening: false,
 
   speaking: false
 };
@@ -38,6 +50,12 @@ const saraStatus =
 const saraMessage =
   document.getElementById("saraMessage");
 
+const voiceButton =
+  document.getElementById("voiceButton");
+
+const voiceStatus =
+  document.getElementById("voiceStatus");
+
 const activateButton =
   document.getElementById("activateButton");
 
@@ -53,7 +71,7 @@ async function startFirebase() {
     await initializeFirebase();
 
     console.log(
-      "Firebase connected successfully"
+      "Firebase connected"
     );
 
   } catch (error) {
@@ -82,7 +100,7 @@ function setStatus(text) {
 
 
 // ==========================================
-// SARA MOOD
+// MOOD
 // ==========================================
 
 function setMood(mood) {
@@ -92,16 +110,20 @@ function setMood(mood) {
   avatarContainer?.classList.remove(
     "happy",
     "sad",
-    "annoyed"
+    "annoyed",
+    "excited"
   );
 
   if (
     mood === "happy" ||
     mood === "sad" ||
-    mood === "annoyed"
+    mood === "annoyed" ||
+    mood === "excited"
   ) {
 
-    avatarContainer?.classList.add(mood);
+    avatarContainer?.classList.add(
+      mood
+    );
 
   }
 
@@ -109,41 +131,174 @@ function setMood(mood) {
 
 
 // ==========================================
-// SHOW SARA
+// SARA SPEAK
 // ==========================================
 
-function showSara() {
+async function SaraSpeak(
+  text,
+  mood = "normal"
+) {
 
-  saraApp?.classList.remove(
-    "hidden"
+  if (!text) return;
+
+  Sara.speaking = true;
+
+  setMood(mood);
+
+  if (saraMessage) {
+    saraMessage.textContent = text;
+  }
+
+  setStatus(
+    "Sara bol rahi hai..."
+  );
+
+  avatarContainer?.classList.add(
+    "speaking"
+  );
+
+  try {
+
+    await speak(
+      text,
+      mood
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Voice error:",
+      error
+    );
+
+  }
+
+  avatarContainer?.classList.remove(
+    "speaking"
+  );
+
+  Sara.speaking = false;
+
+  setStatus(
+    "Sara ready"
   );
 
 }
 
 
 // ==========================================
-// START SARA AFTER LOGIN
+// LISTEN
 // ==========================================
 
-async function startSara(user) {
+async function listenToUser() {
 
-  console.log(
-    "Sara user:",
-    user.uid
+  if (!Sara.active) {
+
+    await SaraSpeak(
+      "Pehle mujhe activate karo.",
+      "normal"
+    );
+
+    return;
+  }
+
+
+  if (Sara.listening) {
+    return;
+  }
+
+
+  Sara.listening = true;
+
+  voiceButton?.classList.add(
+    "listening"
   );
 
-  showSara();
+  if (voiceStatus) {
+
+    voiceStatus.textContent =
+      "Sun rahi hoon...";
+
+  }
 
   setStatus(
-    "Sara ready"
+    "Sara sun rahi hai..."
   );
 
-  Sara.active = false;
 
-  if (saraMessage) {
+  try {
 
-    saraMessage.textContent =
-      "Haan, main ready hoon 😊";
+    const userText =
+      await listen();
+
+
+    console.log(
+      "User:",
+      userText
+    );
+
+
+    if (!userText) {
+      return;
+    }
+
+
+    // Temporary testing:
+    // Actual AI backend next stage me connect hoga.
+
+    if (saraMessage) {
+
+      saraMessage.textContent =
+        userText;
+
+    }
+
+
+    setStatus(
+      "Sara soch rahi hai..."
+    );
+
+
+    const response =
+      await askSara(
+        userText
+      );
+
+
+    await SaraSpeak(
+      response.text,
+      response.mood
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Listening error:",
+      error
+    );
+
+
+    await SaraSpeak(
+      "Mujhe sunai nahi diya. Dobara bolo.",
+      "normal"
+    );
+
+
+  } finally {
+
+    Sara.listening = false;
+
+    voiceButton?.classList.remove(
+      "listening"
+    );
+
+    if (voiceStatus) {
+
+      voiceStatus.textContent =
+        "Baat karne ke liye tap karo";
+
+    }
 
   }
 
@@ -169,18 +324,14 @@ function activateSara() {
 
   }
 
-  setMood("happy");
-
   setStatus(
     "Sara active"
   );
 
-  if (saraMessage) {
-
-    saraMessage.textContent =
-      "Haan, bolo 😊";
-
-  }
+  SaraSpeak(
+    "Haan, bolo 😊",
+    "happy"
+  );
 
 }
 
@@ -193,6 +344,12 @@ function deactivateSara() {
 
   Sara.active = false;
 
+  stopSpeaking();
+
+  avatarContainer?.classList.remove(
+    "speaking"
+  );
+
   activateButton?.classList.remove(
     "active"
   );
@@ -204,8 +361,6 @@ function deactivateSara() {
 
   }
 
-  setMood("normal");
-
   setStatus(
     "Sara ready"
   );
@@ -214,7 +369,7 @@ function deactivateSara() {
 
 
 // ==========================================
-// ACTIVATE BUTTON
+// BUTTON EVENTS
 // ==========================================
 
 activateButton?.addEventListener(
@@ -235,6 +390,34 @@ activateButton?.addEventListener(
 );
 
 
+voiceButton?.addEventListener(
+  "click",
+  listenToUser
+);
+
+
+// ==========================================
+// START AFTER LOGIN
+// ==========================================
+
+async function startSara(user) {
+
+  console.log(
+    "Sara user:",
+    user.uid
+  );
+
+  saraApp?.classList.remove(
+    "hidden"
+  );
+
+  setStatus(
+    "Sara ready"
+  );
+
+}
+
+
 // ==========================================
 // PUBLIC CONTROLLER
 // ==========================================
@@ -245,9 +428,11 @@ window.Sara = {
 
   deactivate: deactivateSara,
 
-  setMood: setMood,
+  listen: listenToUser,
 
-  getMood: () => Sara.mood
+  speak: SaraSpeak,
+
+  setMood: setMood
 
 };
 
