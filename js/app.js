@@ -13,8 +13,8 @@ import {
 } from "./voice.js";
 
 import {
-  askSara
-} from "./ai.js";
+  talkToSara
+} from "./conversation.js";
 
 
 // ==========================================
@@ -23,14 +23,10 @@ import {
 
 const Sara = {
   name: localStorage.getItem("saraName") || "Sara",
-
   active: false,
-
-  mood: "normal",
-
   listening: false,
-
-  speaking: false
+  speaking: false,
+  mood: "normal"
 };
 
 
@@ -61,32 +57,6 @@ const activateButton =
 
 
 // ==========================================
-// FIREBASE
-// ==========================================
-
-async function startFirebase() {
-
-  try {
-
-    await initializeFirebase();
-
-    console.log(
-      "Firebase connected"
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Firebase error:",
-      error
-    );
-
-  }
-
-}
-
-
-// ==========================================
 // STATUS
 // ==========================================
 
@@ -105,7 +75,7 @@ function setStatus(text) {
 
 function setMood(mood) {
 
-  Sara.mood = mood;
+  Sara.mood = mood || "normal";
 
   avatarContainer?.classList.remove(
     "happy",
@@ -115,14 +85,12 @@ function setMood(mood) {
   );
 
   if (
-    mood === "happy" ||
-    mood === "sad" ||
-    mood === "annoyed" ||
-    mood === "excited"
+    ["happy", "sad", "annoyed", "excited"]
+      .includes(Sara.mood)
   ) {
 
     avatarContainer?.classList.add(
-      mood
+      Sara.mood
     );
 
   }
@@ -167,7 +135,7 @@ async function SaraSpeak(
   } catch (error) {
 
     console.error(
-      "Voice error:",
+      "Speech error:",
       error
     );
 
@@ -180,14 +148,16 @@ async function SaraSpeak(
   Sara.speaking = false;
 
   setStatus(
-    "Sara ready"
+    Sara.active
+      ? "Sara active"
+      : "Sara ready"
   );
 
 }
 
 
 // ==========================================
-// LISTEN
+// LISTEN + TALK
 // ==========================================
 
 async function listenToUser() {
@@ -200,10 +170,14 @@ async function listenToUser() {
     );
 
     return;
+
   }
 
 
-  if (Sara.listening) {
+  if (
+    Sara.listening ||
+    Sara.speaking
+  ) {
     return;
   }
 
@@ -215,10 +189,8 @@ async function listenToUser() {
   );
 
   if (voiceStatus) {
-
     voiceStatus.textContent =
       "Sun rahi hoon...";
-
   }
 
   setStatus(
@@ -232,25 +204,20 @@ async function listenToUser() {
       await listen();
 
 
-    console.log(
-      "User:",
-      userText
-    );
-
-
     if (!userText) {
       return;
     }
 
 
-    // Temporary testing:
-    // Actual AI backend next stage me connect hoga.
+    console.log(
+      "Tum:",
+      userText
+    );
+
 
     if (saraMessage) {
-
       saraMessage.textContent =
         userText;
-
     }
 
 
@@ -260,7 +227,7 @@ async function listenToUser() {
 
 
     const response =
-      await askSara(
+      await talkToSara(
         userText
       );
 
@@ -274,7 +241,7 @@ async function listenToUser() {
   } catch (error) {
 
     console.error(
-      "Listening error:",
+      "Voice input error:",
       error
     );
 
@@ -328,6 +295,7 @@ function activateSara() {
     "Sara active"
   );
 
+
   SaraSpeak(
     "Haan, bolo 😊",
     "happy"
@@ -345,6 +313,8 @@ function deactivateSara() {
   Sara.active = false;
 
   stopSpeaking();
+
+  Sara.listening = false;
 
   avatarContainer?.classList.remove(
     "speaking"
@@ -369,7 +339,7 @@ function deactivateSara() {
 
 
 // ==========================================
-// BUTTON EVENTS
+// BUTTONS
 // ==========================================
 
 activateButton?.addEventListener(
@@ -377,13 +347,9 @@ activateButton?.addEventListener(
   () => {
 
     if (Sara.active) {
-
       deactivateSara();
-
     } else {
-
       activateSara();
-
     }
 
   }
@@ -397,13 +363,13 @@ voiceButton?.addEventListener(
 
 
 // ==========================================
-// START AFTER LOGIN
+// AFTER LOGIN
 // ==========================================
 
 async function startSara(user) {
 
   console.log(
-    "Sara user:",
+    "Logged in:",
     user.uid
   );
 
@@ -419,7 +385,41 @@ async function startSara(user) {
 
 
 // ==========================================
-// PUBLIC CONTROLLER
+// FIREBASE
+// ==========================================
+
+async function startApp() {
+
+  try {
+
+    await initializeFirebase();
+
+    console.log(
+      "Firebase connected"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Firebase connection error:",
+      error
+    );
+
+  }
+
+
+  startAuthUI(
+    startSara
+  );
+
+}
+
+
+startApp();
+
+
+// ==========================================
+// GLOBAL
 // ==========================================
 
 window.Sara = {
@@ -435,21 +435,3 @@ window.Sara = {
   setMood: setMood
 
 };
-
-
-// ==========================================
-// START APPLICATION
-// ==========================================
-
-async function startApp() {
-
-  await startFirebase();
-
-  startAuthUI(
-    startSara
-  );
-
-}
-
-
-startApp();
