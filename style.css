@@ -1,40 +1,102 @@
 * {
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
 }
 
 html,
 body {
   margin: 0;
-  padding: 0;
   width: 100%;
-  min-height: 100%;
-  background: #080808;
-  color: #ffffff;
-  font-family: Arial, sans-serif;
-}
-
-body {
-  min-height: 100vh;
+  height: 100%;
   overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #050505;
+  color: white;
 }
 
-#saraApp {
+button,
+input {
+  font: inherit;
+}
+
+.hidden {
+  display: none !important;
+}
+
+
+/* =========================
+   AUTH
+========================= */
+
+.authScreen {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 20px;
+}
+
+.authBox {
+  width: min(380px, 100%);
+  padding: 28px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  text-align: center;
+  backdrop-filter: blur(20px);
+}
+
+.authBox h1 {
+  margin: 0 0 8px;
+  font-size: 42px;
+}
+
+.authBox p {
+  opacity: .7;
+  margin-bottom: 25px;
+}
+
+.authBox input {
+  width: 100%;
+  margin: 7px 0;
+  padding: 14px;
+  border: 0;
+  outline: 0;
+  border-radius: 12px;
+  background: rgba(255,255,255,.1);
+  color: white;
+}
+
+.authBox button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+#authMessage {
+  min-height: 22px;
+  margin-top: 15px;
+  font-size: 13px;
+  opacity: .8;
+}
+
+
+/* =========================
+   SARA
+========================= */
+
+#saraApp {
+  width: 100%;
+  height: 100%;
   position: relative;
 }
 
-/* =========================
-   SARA AVATAR
-========================= */
-
 #avatarArea {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -42,234 +104,161 @@ body {
 }
 
 #avatarContainer {
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  overflow: hidden;
-  position: relative;
-  box-shadow:
-    0 0 30px rgba(255, 255, 255, 0.08),
-    0 0 70px rgba(255, 200, 120, 0.08);
-
-  animation: saraIdle 4s ease-in-out infinite;
+  width: min(85vw, 430px);
+  height: min(85vw, 430px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .3s ease;
 }
 
 #saraAvatar {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  display: block;
+  object-fit: contain;
+  user-select: none;
+  transition:
+    transform .3s ease,
+    filter .3s ease;
 }
 
-/* Sara ka normal subtle movement */
 
-@keyframes saraIdle {
-  0% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-5px);
-  }
-
-  100% {
-    transform: translateY(0);
-  }
-}
-
-/* Sara speaking state */
+/* Speaking animation */
 
 #avatarContainer.speaking {
-  animation: saraSpeaking 0.7s ease-in-out infinite alternate;
+  animation: talking .45s infinite alternate;
 }
 
-@keyframes saraSpeaking {
+@keyframes talking {
   from {
     transform: translateY(0) scale(1);
   }
 
   to {
-    transform: translateY(-3px) scale(1.015);
+    transform: translateY(-5px) scale(1.025);
   }
 }
 
-/* Happy state */
 
-#avatarContainer.happy {
-  animation: saraHappy 1s ease-in-out;
+/* Mood */
+
+#avatarContainer.happy #saraAvatar {
+  transform: scale(1.04);
 }
 
-@keyframes saraHappy {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.04) translateY(-5px);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* Sad state */
-
-#avatarContainer.sad {
-  filter: brightness(0.85);
+#avatarContainer.sad #saraAvatar {
   transform: translateY(5px);
+  filter: brightness(.82);
 }
 
-/* Annoyed state */
-
-#avatarContainer.annoyed {
-  filter: brightness(0.9);
-  transform: translateX(2px);
+#avatarContainer.annoyed #saraAvatar {
+  transform: translateX(-2px);
 }
 
-/* =========================
-   STATUS
-========================= */
+#avatarContainer.excited #saraAvatar {
+  transform: scale(1.07);
+}
+
+
+/* Status */
 
 #saraStatus {
-  margin-top: 14px;
+  margin-top: 15px;
+  opacity: .65;
   font-size: 14px;
-  color: #a9a9a9;
 }
 
+
 /* =========================
-   CONVERSATION
+   MESSAGE
 ========================= */
 
 #conversationArea {
-  width: 100%;
-  max-width: 390px;
-  min-height: 75px;
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: absolute;
+  left: 50%;
+  bottom: 145px;
+  transform: translateX(-50%);
+  width: min(90%, 600px);
+  text-align: center;
 }
 
 .message {
-  max-width: 90%;
-  padding: 13px 17px;
-  border-radius: 20px;
-  line-height: 1.5;
-  text-align: center;
-  font-size: 15px;
+  padding: 10px 15px;
+  border-radius: 18px;
+  display: inline-block;
+  background: rgba(255,255,255,.08);
 }
 
-.saraMessage {
-  background: #191919;
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
-}
-
-.userMessage {
-  margin-top: 8px;
-  background: #292929;
-  color: #eeeeee;
-}
-
-.hidden {
-  display: none;
-}
 
 /* =========================
    VOICE
 ========================= */
 
 #voiceArea {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 20px;
+  position: absolute;
+  left: 50%;
+  bottom: 65px;
+  transform: translateX(-50%);
+  text-align: center;
 }
 
 #voiceButton {
-  width: 72px;
-  height: 72px;
-  border: none;
+  width: 60px;
+  height: 60px;
+  border: 0;
   border-radius: 50%;
-  background: #ffffff;
-  color: #000000;
-  font-size: 29px;
   cursor: pointer;
-
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-#voiceButton:active {
-  transform: scale(0.92);
+  font-size: 25px;
+  background: rgba(255,255,255,.12);
+  color: white;
 }
 
 #voiceButton.listening {
-  transform: scale(1.08);
-  box-shadow: 0 0 35px rgba(255, 255, 255, 0.25);
+  transform: scale(1.12);
 }
 
 #voiceStatus {
-  margin-top: 9px;
-  color: #8d8d8d;
+  margin-top: 8px;
   font-size: 12px;
+  opacity: .55;
 }
+
 
 /* =========================
    ACTIVATE
 ========================= */
 
 #activateArea {
-  margin-top: 25px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }
 
 #activateButton {
-  border: 1px solid #444444;
-  background: #151515;
-  color: #ffffff;
-
-  padding: 13px 25px;
-
-  border-radius: 15px;
-
-  font-size: 14px;
-  font-weight: bold;
-
+  padding: 10px 15px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(255,255,255,.1);
+  color: white;
   cursor: pointer;
-
-  transition:
-    background 0.2s ease,
-    transform 0.15s ease;
-}
-
-#activateButton:active {
-  transform: scale(0.96);
 }
 
 #activateButton.active {
-  background: #ffffff;
-  color: #000000;
+  background: rgba(255,255,255,.2);
 }
 
-/* =========================
-   MOBILE
-========================= */
 
-@media (max-width: 480px) {
+/* Mobile */
 
-  #avatarContainer {
-    width: 230px;
-    height: 230px;
-  }
+@media (max-width: 600px) {
 
   #conversationArea {
-    max-width: 350px;
+    bottom: 135px;
   }
 
-  .message {
-    font-size: 14px;
+  #activateArea {
+    top: 12px;
+    right: 12px;
   }
-  }
+
+}
