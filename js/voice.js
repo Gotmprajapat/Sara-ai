@@ -1,12 +1,11 @@
 // js/voice.js
 
 let selectedVoice = null;
-
 let availableVoices = [];
 
 
 // ==========================================
-// LOAD VOICES
+// LOAD SARA VOICES
 // ==========================================
 
 function loadVoices() {
@@ -14,26 +13,35 @@ function loadVoices() {
   availableVoices =
     window.speechSynthesis.getVoices();
 
-  if (!availableVoices.length) {
-    return;
+  if (!availableVoices.length) return;
+
+  const saved =
+    localStorage.getItem("saraVoice");
+
+  if (saved) {
+
+    const savedVoice =
+      availableVoices.find(
+        voice => voice.name === saved
+      );
+
+    if (savedVoice) {
+      selectedVoice = savedVoice;
+      return;
+    }
   }
 
-  // Female / natural sounding Hindi voices ko
-  // preference dene ki koshish
+  // Hindi / Indian voice ko preference
   const preferred =
     availableVoices.find(
       voice =>
-        /female|zira|heera|google.*hindi|hindi/i
-          .test(voice.name + " " + voice.lang)
+        /hi-IN|hindi/i.test(voice.lang)
     );
 
   selectedVoice =
     preferred || availableVoices[0];
-
 }
 
-
-// Browser voices late load kar sakta hai
 window.speechSynthesis.onvoiceschanged =
   loadVoices;
 
@@ -41,13 +49,94 @@ loadVoices();
 
 
 // ==========================================
-// GET AVAILABLE VOICES
+// SARA SPEAK
+// ==========================================
+
+export function speak(text, mood = "normal") {
+
+  return new Promise(resolve => {
+
+    if (!text) {
+      resolve();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance =
+      new SpeechSynthesisUtterance(text);
+
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+    } else {
+      utterance.lang = "hi-IN";
+    }
+
+    // Mood ke hisaab se voice
+    switch (mood) {
+
+      case "happy":
+        utterance.rate = 1.02;
+        utterance.pitch = 1.12;
+        break;
+
+      case "sad":
+        utterance.rate = 0.88;
+        utterance.pitch = 0.95;
+        break;
+
+      case "annoyed":
+        utterance.rate = 0.92;
+        utterance.pitch = 0.98;
+        break;
+
+      case "excited":
+        utterance.rate = 1.08;
+        utterance.pitch = 1.15;
+        break;
+
+      default:
+        utterance.rate = 0.95;
+        utterance.pitch = 1.05;
+    }
+
+    utterance.volume = 1;
+
+    utterance.onend = () => {
+      resolve();
+    };
+
+    utterance.onerror = () => {
+      resolve();
+    };
+
+    window.speechSynthesis.speak(
+      utterance
+    );
+
+  });
+}
+
+
+// ==========================================
+// STOP SARA
+// ==========================================
+
+export function stopSpeaking() {
+
+  window.speechSynthesis.cancel();
+
+}
+
+
+// ==========================================
+// GET VOICES
 // ==========================================
 
 export function getVoices() {
 
   return availableVoices;
-
 }
 
 
@@ -73,105 +162,11 @@ export function selectVoice(index) {
   );
 
   return true;
-
 }
 
 
 // ==========================================
-// RESTORE SAVED VOICE
-// ==========================================
-
-function restoreVoice() {
-
-  const saved =
-    localStorage.getItem("saraVoice");
-
-  if (!saved) {
-    return;
-  }
-
-  const voice =
-    availableVoices.find(
-      item => item.name === saved
-    );
-
-  if (voice) {
-    selectedVoice = voice;
-  }
-
-}
-
-setTimeout(
-  restoreVoice,
-  500
-);
-
-
-// ==========================================
-// SPEAK
-// ==========================================
-
-export function speak(text) {
-
-  return new Promise(
-    resolve => {
-
-      if (!text) {
-        resolve();
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-
-      const utterance =
-        new SpeechSynthesisUtterance(text);
-
-      if (selectedVoice) {
-        utterance.voice =
-          selectedVoice;
-      }
-
-      // Hindi
-      utterance.lang =
-        selectedVoice?.lang || "hi-IN";
-
-      // Natural speed
-      utterance.rate = 0.95;
-
-      // Female-like pitch
-      utterance.pitch = 1.08;
-
-      utterance.volume = 1;
-
-      utterance.onend =
-        () => resolve();
-
-      utterance.onerror =
-        () => resolve();
-
-      window.speechSynthesis.speak(
-        utterance
-      );
-
-    }
-  );
-
-}
-
-
-// ==========================================
-// STOP SPEAKING
-// ==========================================
-
-export function stopSpeaking() {
-
-  window.speechSynthesis.cancel();
-
-}
-
-
-// ==========================================
-// PREVIEW VOICE
+// VOICE PREVIEW
 // ==========================================
 
 export function previewVoice(index) {
@@ -192,12 +187,8 @@ export function previewVoice(index) {
     );
 
   preview.voice = voice;
-
-  preview.lang =
-    voice.lang || "hi-IN";
-
+  preview.lang = voice.lang || "hi-IN";
   preview.rate = 0.95;
-
   preview.pitch = 1.08;
 
   window.speechSynthesis.cancel();
@@ -205,16 +196,73 @@ export function previewVoice(index) {
   window.speechSynthesis.speak(
     preview
   );
-
 }
 
 
 // ==========================================
-// CURRENT VOICE
+// LISTEN TO USER
 // ==========================================
 
-export function getSelectedVoice() {
+export function listen() {
 
-  return selectedVoice;
+  return new Promise((resolve, reject) => {
 
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+
+      reject(
+        new Error(
+          "Voice recognition is not supported."
+        )
+      );
+
+      return;
+    }
+
+    const recognition =
+      new SpeechRecognition();
+
+    recognition.lang = "hi-IN";
+
+    recognition.continuous = false;
+
+    recognition.interimResults = false;
+
+    recognition.maxAlternatives = 1;
+
+
+    recognition.onresult =
+      event => {
+
+        const text =
+          event.results[0][0].transcript;
+
+        resolve(text);
+      };
+
+
+    recognition.onerror =
+      event => {
+
+        reject(
+          new Error(
+            event.error || "Voice error"
+          )
+        );
+      };
+
+
+    recognition.onend =
+      () => {
+
+        // Recognition naturally ends here.
+      };
+
+
+    recognition.start();
+
+  });
 }
