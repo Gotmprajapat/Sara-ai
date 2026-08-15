@@ -224,6 +224,45 @@ async function searchMemory(text) {
   return null;
 }
 
+function generateNaturalReply(text) {
+
+  const t =
+    text.toLowerCase();
+
+
+  if (
+    t.includes("kahan") ||
+    t.includes("kaha")
+  ) {
+
+    return "Pata nahi 😅 tum batao, main yaad rakh lungi.";
+
+  }
+
+
+  if (
+    t.includes("kya") ||
+    t.includes("kaise") ||
+    t.includes("kyu") ||
+    t.includes("kyon")
+  ) {
+
+    return "Hmm 🤔 iska exact answer mujhe abhi nahi pata.";
+
+  }
+
+
+  if (
+    t.includes("kaun")
+  ) {
+
+    return "Ye mujhe abhi yaad nahi hai 😅";
+
+  }
+
+
+  return "Hmm, iske baare me mujhe abhi yaad nahi hai. Tum bata do, main yaad rakh lungi.";
+}
 
 // ===============================
 // BASIC TALK
@@ -416,14 +455,13 @@ export async function talkToSara(
   // ===============================
 
   return processResponse(
-    {
-      text:
-        "Mujhe iska abhi pata nahi hai.",
-      mood:
-        "normal",
-      known:
-        false
-    },
-    userText
-  );
-      }
+  {
+    text:
+      generateNaturalReply(userText),
+    mood:
+      "normal",
+    known:
+      false
+  },
+  userText
+);
