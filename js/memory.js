@@ -1,19 +1,12 @@
 // js/memory.js
 
 import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  serverTimestamp,
-  deleteDoc,
-  doc
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-import {
-  getFirebaseDB
-} from "./firebase.js";
+  getDatabase,
+  ref,
+  push,
+  get,
+  remove
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 import {
   getCurrentUser
@@ -21,27 +14,22 @@ import {
 
 
 // ==========================================
-// MEMORY COLLECTION
+// USER MEMORY REFERENCE
 // ==========================================
 
-function getMemoryCollection() {
+function getUserMemoryRef() {
 
   const user = getCurrentUser();
-  const db = getFirebaseDB();
 
   if (!user) {
     throw new Error("User is not logged in.");
   }
 
-  if (!db) {
-    throw new Error("Firebase database is not initialized.");
-  }
+  const db = getDatabase();
 
-  return collection(
+  return ref(
     db,
-    "users",
-    user.uid,
-    "memories"
+    `users/${user.uid}/memories`
   );
 }
 
@@ -50,75 +38,60 @@ function getMemoryCollection() {
 // SAVE MEMORY
 // ==========================================
 
-export async function saveMemory(text, type = "personal") {
+export async function saveMemory(
+  text,
+  type = "personal"
+) {
 
   if (!text || !text.trim()) {
-    return null;
+    return false;
   }
 
-  const memoryCollection =
-    getMemoryCollection();
+  const memoryRef =
+    getUserMemoryRef();
 
-  const memory = {
-
-    text: text.trim(),
-
-    type: type,
-
-    createdAt: serverTimestamp(),
-
-    source: "sara"
-
-  };
-
-  const result =
-    await addDoc(
-      memoryCollection,
-      memory
-    );
-
-  console.log(
-    "Sara memory saved:",
-    text
+  await push(
+    memoryRef,
+    {
+      text: text.trim(),
+      type: type,
+      createdAt: Date.now()
+    }
   );
 
-  return result.id;
+  return true;
 }
 
 
 // ==========================================
-// GET MEMORIES
+// GET ALL MEMORIES
 // ==========================================
 
 export async function getMemories() {
 
-  const memoryCollection =
-    getMemoryCollection();
-
-  const memoryQuery =
-    query(
-      memoryCollection,
-      orderBy("createdAt", "asc")
-    );
+  const memoryRef =
+    getUserMemoryRef();
 
   const snapshot =
-    await getDocs(memoryQuery);
+    await get(memoryRef);
 
-  const memories = [];
+  if (!snapshot.exists()) {
+    return [];
+  }
 
-  snapshot.forEach((item) => {
+  const data =
+    snapshot.val();
 
-    memories.push({
-
-      id: item.id,
-
-      ...item.data()
-
-    });
-
-  });
-
-  return memories;
+  return Object.entries(data)
+    .map(([id, memory]) => ({
+      id,
+      ...memory
+    }))
+    .sort(
+      (a, b) =>
+        (a.createdAt || 0) -
+        (b.createdAt || 0)
+    );
 }
 
 
@@ -126,78 +99,79 @@ export async function getMemories() {
 // SEARCH MEMORY
 // ==========================================
 
-export async function searchMemories(keyword) {
+export async function searchMemories(
+  query
+) {
+
+  if (!query) {
+    return [];
+  }
 
   const memories =
     await getMemories();
 
-  if (!keyword) {
-    return memories;
-  }
-
-  const searchText =
-    keyword.toLowerCase();
+  const search =
+    query
+      .toLowerCase()
+      .trim();
 
   return memories.filter(
-    (memory) =>
+    memory =>
       memory.text &&
       memory.text
         .toLowerCase()
-        .includes(searchText)
+        .includes(search)
   );
 }
 
 
 // ==========================================
-// DELETE ONE MEMORY
+// FIND KNOWLEDGE
 // ==========================================
 
-export async function deleteMemory(memoryId) {
+export async function findKnowledge(
+  keyword
+) {
 
-  const user = getCurrentUser();
-  const db = getFirebaseDB();
+  return searchMemories(
+    keyword
+  );
+}
 
-  if (!user || !db) {
+
+// ==========================================
+// DELETE MEMORY
+// ==========================================
+
+export async function deleteMemory(
+  memoryId
+) {
+
+  if (!memoryId) {
+    return false;
+  }
+
+  const user =
+    getCurrentUser();
+
+  if (!user) {
     throw new Error(
-      "User or database unavailable."
+      "User is not logged in."
     );
   }
 
-  await deleteDoc(
-    doc(
+  const db =
+    getDatabase();
+
+  const memoryRef =
+    ref(
       db,
-      "users",
-      user.uid,
-      "memories",
-      memoryId
-    )
-  );
-
-  console.log(
-    "Sara memory deleted:",
-    memoryId
-  );
-}
-
-
-// ==========================================
-// DELETE ALL MEMORIES
-// ==========================================
-
-export async function deleteAllMemories() {
-
-  const memories =
-    await getMemories();
-
-  for (const memory of memories) {
-
-    await deleteMemory(
-      memory.id
+      `users/${user.uid}/memories/${memoryId}`
     );
 
-  }
-
-  console.log(
-    "All Sara memories deleted."
+  await remove(
+    memoryRef
   );
-      }
+
+  return true;
+    }
