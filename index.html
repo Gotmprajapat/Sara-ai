@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="hi">
+
 <head>
   <meta charset="UTF-8">
 
@@ -17,17 +18,65 @@
 
 <body>
 
-  <div id="saraApp">
+  <!-- ==============================
+       LOGIN / SIGNUP
+  =============================== -->
 
-    <!-- Sara Avatar -->
+  <div id="authScreen" class="authScreen">
+
+    <div class="authBox">
+
+      <h1>Sara</h1>
+
+      <p>Apni Sara se connect karo</p>
+
+      <input
+        id="emailInput"
+        type="email"
+        placeholder="Email"
+        autocomplete="email"
+      >
+
+      <input
+        id="passwordInput"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+      >
+
+      <button id="loginButton">
+        LOGIN
+      </button>
+
+      <button id="signupButton">
+        CREATE ACCOUNT
+      </button>
+
+      <div id="authMessage"></div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ==============================
+       SARA MAIN APP
+  =============================== -->
+
+  <div id="saraApp" class="hidden">
+
+    <!-- Avatar -->
+
     <div id="avatarArea">
 
       <div id="avatarContainer">
+
         <img
           id="saraAvatar"
           src="assets/sara.png"
           alt="Sara"
         >
+
       </div>
 
       <div id="saraStatus">
@@ -37,7 +86,8 @@
     </div>
 
 
-    <!-- Sara Conversation -->
+    <!-- Conversation -->
+
     <div id="conversationArea">
 
       <div
@@ -50,13 +100,13 @@
       <div
         id="userMessage"
         class="message userMessage hidden"
-      >
-      </div>
+      ></div>
 
     </div>
 
 
     <!-- Voice -->
+
     <div id="voiceArea">
 
       <button
@@ -75,6 +125,7 @@
 
 
     <!-- Activate -->
+
     <div id="activateArea">
 
       <button
@@ -89,30 +140,13 @@
   </div>
 
 
-  <!--
-    Firebase yahan DIRECT nahi lagega.
+  <!-- Main app -->
 
-    Firebase connection:
-    js/firebase-config.js
-    js/firebase.js
-
-    AI:
-    js/ai.js
-
-    Voice:
-    js/voice.js
-
-    Memory:
-    js/memory.js
-
-    Personality + Mood:
-    js/personality.js
-
-    Main controller:
-    js/app.js
-  -->
-
-  <script type="module" src="js/app.js"></script>
+  <script
+    type="module"
+    src="js/app.js"
+  ></script>
 
 </body>
+
 </html>
