@@ -1,72 +1,32 @@
 // js/personality.js
 
-let currentMood =
-  localStorage.getItem("saraMood") || "normal";
-
-let currentState = "available";
-
-
-// ==========================================
-// MOODS
-// ==========================================
-
-const moods = {
-  normal: {
-    name: "normal",
-    voiceRate: 0.95,
-    pitch: 1.05
-  },
-
-  happy: {
-    name: "happy",
-    voiceRate: 1.02,
-    pitch: 1.12
-  },
-
-  sad: {
-    name: "sad",
-    voiceRate: 0.88,
-    pitch: 0.95
-  },
-
-  annoyed: {
-    name: "annoyed",
-    voiceRate: 0.92,
-    pitch: 0.98
-  },
-
-  excited: {
-    name: "excited",
-    voiceRate: 1.08,
-    pitch: 1.15
-  },
-
-  calm: {
-    name: "calm",
-    voiceRate: 0.90,
-    pitch: 1.02
-  }
-};
+let saraMood = "normal";
+let saraName = "Sara";
 
 
 // ==========================================
 // SET MOOD
 // ==========================================
 
-export function setMood(mood) {
+export function setSaraMood(mood) {
 
-  if (!moods[mood]) {
-    mood = "normal";
+  const allowedMoods = [
+    "normal",
+    "happy",
+    "sad",
+    "angry",
+    "annoyed",
+    "excited",
+    "calm"
+  ];
+
+  if (
+    allowedMoods.includes(mood)
+  ) {
+    saraMood = mood;
   }
 
-  currentMood = mood;
-
-  localStorage.setItem(
-    "saraMood",
-    mood
-  );
-
-  return moods[mood];
+  return saraMood;
 }
 
 
@@ -74,110 +34,96 @@ export function setMood(mood) {
 // GET MOOD
 // ==========================================
 
-export function getMood() {
-
-  return currentMood;
-
+export function getSaraMood() {
+  return saraMood;
 }
 
 
 // ==========================================
-// GET MOOD SETTINGS
+// SET NAME
 // ==========================================
 
-export function getMoodSettings() {
+export function setSaraName(name) {
 
-  return (
-    moods[currentMood] ||
-    moods.normal
-  );
+  if (
+    name &&
+    name.trim()
+  ) {
 
-}
+    saraName =
+      name.trim();
 
-
-// ==========================================
-// SET STATE
-// ==========================================
-
-export function setState(state) {
-
-  currentState = state;
-
-}
-
-
-// ==========================================
-// GET STATE
-// ==========================================
-
-export function getState() {
-
-  return currentState;
-
-}
-
-
-// ==========================================
-// DETECT BASIC EMOTION
-// ==========================================
-
-export function detectEmotion(text) {
-
-  if (!text) {
-    return "normal";
   }
 
-  const message =
-    text.toLowerCase();
+  return saraName;
+}
 
-  // Happy
+
+// ==========================================
+// GET NAME
+// ==========================================
+
+export function getSaraName() {
+  return saraName;
+}
+
+
+// ==========================================
+// DETECT USER MOOD
+// ==========================================
+
+export function detectUserMood(text) {
+
+  const t =
+    (text || "")
+      .toLowerCase();
+
+
   if (
-    message.includes("khush") ||
-    message.includes("happy") ||
-    message.includes("mast") ||
-    message.includes("accha laga") ||
-    message.includes("😂") ||
-    message.includes("😊")
+    t.includes("sad") ||
+    t.includes("dukhi") ||
+    t.includes("udaas") ||
+    t.includes("bura lag") ||
+    t.includes("rona")
   ) {
-    return "happy";
-  }
 
-
-  // Sad
-  if (
-    message.includes("sad") ||
-    message.includes("dukhi") ||
-    message.includes("bura lag") ||
-    message.includes("rona") ||
-    message.includes("ro raha") ||
-    message.includes("ro rahi")
-  ) {
     return "sad";
+
   }
 
 
-  // Annoyed / angry
   if (
-    message.includes("gussa") ||
-    message.includes("pareshan") ||
-    message.includes("chup") ||
-    message.includes("bas karo") ||
-    message.includes("jao") ||
-    message.includes("hat jao")
+    t.includes("khush") ||
+    t.includes("happy") ||
+    t.includes("mast") ||
+    t.includes("accha lag")
   ) {
+
+    return "happy";
+
+  }
+
+
+  if (
+    t.includes("gussa") ||
+    t.includes("naraz") ||
+    t.includes("pareshan") ||
+    t.includes("tang")
+  ) {
+
     return "annoyed";
+
   }
 
 
-  // Excited
   if (
-    message.includes("wow") ||
-    message.includes("wah") ||
-    message.includes("zabardast") ||
-    message.includes("mil gaya") ||
-    message.includes("ho gaya")
+    t.includes("wah") ||
+    t.includes("awesome") ||
+    t.includes("excited")
   ) {
+
     return "excited";
+
   }
 
 
@@ -186,47 +132,69 @@ export function detectEmotion(text) {
 
 
 // ==========================================
-// HANDLE USER EMOTION
-// ==========================================
-
-export function updateMoodFromMessage(text) {
-
-  const detected =
-    detectEmotion(text);
-
-  setMood(detected);
-
-  return detected;
-
-}
-
-
-// ==========================================
 // MOOD RESPONSE STYLE
 // ==========================================
 
-export function getResponseStyle() {
+export function applyMoodToResponse(
+  response,
+  userText
+) {
 
-  switch (currentMood) {
+  const userMood =
+    detectUserMood(
+      userText
+    );
 
-    case "happy":
-      return "friendly, warm and slightly playful";
 
-    case "sad":
-      return "soft, caring and calm";
+  // User sad → Sara soft
+  if (
+    userMood === "sad"
+  ) {
 
-    case "annoyed":
-      return "short, slightly hurt and calm";
+    setSaraMood("sad");
 
-    case "excited":
-      return "energetic and enthusiastic";
-
-    case "calm":
-      return "soft and relaxed";
-
-    default:
-      return "natural, concise and friendly";
+    return {
+      ...response,
+      mood: "sad"
+    };
 
   }
 
+
+  // User happy → Sara happy
+  if (
+    userMood === "happy"
+  ) {
+
+    setSaraMood("happy");
+
+    return {
+      ...response,
+      mood: "happy"
+    };
+
+  }
+
+
+  // User angry/annoyed
+  if (
+    userMood === "annoyed"
+  ) {
+
+    setSaraMood("calm");
+
+    return {
+      ...response,
+      mood: "calm"
+    };
+
+  }
+
+
+  return {
+    ...response,
+    mood:
+      response.mood ||
+      saraMood
+  };
 }
