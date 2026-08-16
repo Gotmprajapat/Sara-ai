@@ -4,14 +4,13 @@ import {
   createAccount,
   login,
   logout,
-  getCurrentUser,
   watchAuthState
 } from "./auth.js";
 
 
-// ================================
-// AUTH UI ELEMENTS
-// ================================
+// ==========================================
+// ELEMENTS
+// ==========================================
 
 const authScreen =
   document.getElementById("authScreen");
@@ -32,9 +31,9 @@ const authMessage =
   document.getElementById("authMessage");
 
 
-// ================================
-// SHOW MESSAGE
-// ================================
+// ==========================================
+// MESSAGE
+// ==========================================
 
 function showMessage(message) {
 
@@ -42,12 +41,13 @@ function showMessage(message) {
     authMessage.textContent = message;
   }
 
+  console.log("AUTH:", message);
 }
 
 
-// ================================
+// ==========================================
 // LOGIN
-// ================================
+// ==========================================
 
 async function handleLogin() {
 
@@ -55,7 +55,8 @@ async function handleLogin() {
     emailInput?.value.trim();
 
   const password =
-    passwordInput?.value;
+    passwordInput?.value || "";
+
 
   if (!email || !password) {
 
@@ -66,32 +67,51 @@ async function handleLogin() {
     return;
   }
 
+
   try {
 
-    showMessage("Login ho raha hai...");
+    loginButton.disabled = true;
+
+    showMessage(
+      "Login ho raha hai..."
+    );
+
 
     await login(
       email,
       password
     );
 
-    showMessage("");
+
+    showMessage(
+      "Login successful."
+    );
+
 
   } catch (error) {
 
-    console.error(error);
-
-    showMessage(
-      "Login nahi hua. Email/password check karo."
+    console.error(
+      "LOGIN ERROR:",
+      error
     );
 
+    showMessage(
+      getFirebaseError(error)
+    );
+
+
+  } finally {
+
+    loginButton.disabled = false;
+
   }
+
 }
 
 
-// ================================
+// ==========================================
 // CREATE ACCOUNT
-// ================================
+// ==========================================
 
 async function handleSignup() {
 
@@ -99,7 +119,8 @@ async function handleSignup() {
     emailInput?.value.trim();
 
   const password =
-    passwordInput?.value;
+    passwordInput?.value || "";
+
 
   if (!email || !password) {
 
@@ -109,6 +130,7 @@ async function handleSignup() {
 
     return;
   }
+
 
   if (password.length < 6) {
 
@@ -119,104 +141,195 @@ async function handleSignup() {
     return;
   }
 
+
   try {
+
+    signupButton.disabled = true;
 
     showMessage(
       "Account ban raha hai..."
     );
+
 
     await createAccount(
       email,
       password
     );
 
-    showMessage("");
+
+    showMessage(
+      "Account ban gaya."
+    );
+
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "SIGNUP ERROR:",
+      error
+    );
 
-    if (
-      error.code ===
-      "auth/email-already-in-use"
-    ) {
+    showMessage(
+      getFirebaseError(error)
+    );
 
-      showMessage(
-        "Ye email pehle se registered hai."
-      );
 
-    } else {
+  } finally {
 
-      showMessage(
-        "Account nahi bana. Dobara try karo."
-      );
-
-    }
+    signupButton.disabled = false;
 
   }
+
 }
 
 
-// ================================
-// BUTTONS
-// ================================
+// ==========================================
+// FIREBASE ERROR
+// ==========================================
 
-loginButton?.addEventListener(
-  "click",
-  handleLogin
-);
+function getFirebaseError(error) {
 
-signupButton?.addEventListener(
-  "click",
-  handleSignup
-);
+  if (!error) {
+    return "Kuch error aa gaya.";
+  }
 
 
-// ================================
-// AUTH STATE
-// ================================
+  console.error(
+    "Firebase error:",
+    error.code,
+    error.message
+  );
 
-export function startAuthUI(
-  onLoggedIn
-) {
 
-  watchAuthState(
-    (user) => {
+  switch (error.code) {
 
-      if (user) {
+    case "auth/email-already-in-use":
+      return "Ye email pehle se registered hai.";
 
-        // Login screen hide
-        if (authScreen) {
-          authScreen.classList.add(
-            "hidden"
-          );
-        }
+    case "auth/invalid-email":
+      return "Email galat hai.";
 
-        // Sara start
-        if (typeof onLoggedIn === "function") {
-          onLoggedIn(user);
-        }
+    case "auth/weak-password":
+      return "Password aur strong rakho.";
 
-      } else {
+    case "auth/invalid-credential":
+      return "Email ya password galat hai.";
 
-        // Login screen show
-        if (authScreen) {
-          authScreen.classList.remove(
-            "hidden"
-          );
-        }
+    case "auth/user-not-found":
+      return "Is email ka account nahi mila.";
 
-      }
+    case "auth/wrong-password":
+      return "Password galat hai.";
 
-    }
+    case "auth/too-many-requests":
+      return "Bahut attempts ho gaye. Thodi der baad try karo.";
+
+    case "auth/network-request-failed":
+      return "Internet connection check karo.";
+
+    default:
+      return (
+        "Firebase error: " +
+        (error.code || error.message || "unknown")
+      );
+
+  }
+
+}
+
+
+// ==========================================
+// BUTTON EVENTS
+// ==========================================
+
+if (loginButton) {
+
+  loginButton.addEventListener(
+    "click",
+    handleLogin
   );
 
 }
 
 
-// ================================
+if (signupButton) {
+
+  signupButton.addEventListener(
+    "click",
+    handleSignup
+  );
+
+}
+
+
+// ==========================================
+// AUTH STATE
+// ==========================================
+
+export function startAuthUI(
+  onLoggedIn
+) {
+
+  try {
+
+    watchAuthState(
+      user => {
+
+        if (user) {
+
+          if (authScreen) {
+
+            authScreen.classList.add(
+              "hidden"
+            );
+
+          }
+
+
+          if (
+            typeof onLoggedIn ===
+            "function"
+          ) {
+
+            onLoggedIn(user);
+
+          }
+
+
+        } else {
+
+          if (authScreen) {
+
+            authScreen.classList.remove(
+              "hidden"
+            );
+
+          }
+
+        }
+
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "AUTH STATE ERROR:",
+      error
+    );
+
+    showMessage(
+      getFirebaseError(error)
+    );
+
+  }
+
+}
+
+
+// ==========================================
 // LOGOUT
-// ================================
+// ==========================================
 
 export async function logoutSara() {
 
