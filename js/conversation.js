@@ -454,14 +454,16 @@ export async function talkToSara(
   // UNKNOWN
   // ===============================
 
-  return processResponse(
-  {
-    text:
-      generateNaturalReply(userText),
-    mood:
-      "normal",
-    known:
-      false
-  },
-  userText
-);
+    return processResponse(
+    {
+      text:
+        generateNaturalReply(userText),
+      mood:
+        "normal",
+      known:
+        false
+    },
+    userText
+  );
+
+}
